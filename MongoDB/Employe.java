@@ -1,31 +1,35 @@
+// Set MYPATH=C:\BDS2
+// javac -g -cp %MYPATH%\mongojar\mongo-java-driver-3.12.10.jar;%MYPATH% %MYPATH%\MongoDB\Employe.java
+// java -Xmx256m -Xms256m -cp %MYPATH%\mongojar\mongo-java-driver-3.12.10.jar;%MYPATH% MongoDB.Employe
+
+package MongoDB;
+
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase; 
-import com.mongodb.MongoClient; 
-import com.mongodb.MongoCredential; 
-import com.mongodb.DBObject;  
-import com.mongodb.BasicDBObject; 
-import com.mongodb.DBCollection; 
-import com.mongodb.DBCursor;
-import com.mongodb.DB; 
-import org.bson.Document;  
-import java.util.Arrays;
-import java.util.List;
-import com.mongodb.client.FindIterable; 
-import com.mongodb.client.ListIndexesIterable;
-import java.util.Iterator; 
-import java.util.ArrayList;
-import com.mongodb.client.result.UpdateResult;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.AggregateIterable;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Accumulators;
-import com.mongodb.client.model.Indexes;
-import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 
-public class Employe{
+public class Employe {
 
-    public static void main( String args[] ){
-        System.out.println("Ca marche");
+    public static void main(String[] args) {
+        // Connexion à MongoDB
+        try (MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017")) {
+            // Accéder à la base de données
+            MongoDatabase database = mongoClient.getDatabase("ma_base_de_donnees");
+
+            // Sélectionner la collection
+            MongoCollection<Document> collection = database.getCollection("ma_collection");
+
+            // Insérer un document
+            Document document = new Document("nom", "John Doe")
+                    .append("age", 30)
+                    .append("ville", "Paris");
+
+            collection.insertOne(document);
+            System.out.println("Document inséré avec succès !");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
