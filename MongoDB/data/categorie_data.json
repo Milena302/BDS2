@@ -1,0 +1,17 @@
+[
+    {"id_categorie":1,"Titre":"Fiction","Description":"imperdiet sapien urna pretium nisl ut volutpat sapien arcu"},
+    {"id_categorie":2,"Titre":"Non-Fiction","Description":"congue eget"},
+    {"id_categorie":3,"Titre":"Science Fiction","Description":"vestibulum eget vulputate ut ultrices vel"},
+    {"id_categorie":4,"Titre":"Fantaisie","Description":"pede venenatis non sodales sed tincidunt"},
+    {"id_categorie":5,"Titre":"Mystere/Thriller","Description":"pretium"},
+    {"id_categorie":6,"Titre":"Fiction historique","Description":"sit amet sem fusce"},
+    {"id_categorie":7,"Titre":"Biographie/Autobiographie","Description":"lacinia erat vestibulum"},
+    {"id_categorie":8,"Titre":"Romance","Description":"platea dictumst morbi vestibulum velit id pretium iaculis diam"},
+    {"id_categorie":9,"Titre":"Jeunes adultes","Description":"eu est congue elementum in"},
+    {"id_categorie":10,"Titre":"Litterature pour enfants","Description":"nisi at nibh in"},
+    {"id_categorie":11,"Titre":"Horreur","Description":"quis turpis eget elit sodales scelerisque mauris sit amet"},
+    {"id_categorie":12,"Titre":"Bandes dessinees","Description":"venenatis non sodales sed tincidunt eu"},
+    {"id_categorie":13,"Titre":"Poesie","Description":"venenatis"},
+    {"id_categorie":14,"Titre":"Developpement personnel/Auto-assistance","Description":"elementum nullam varius"},
+    {"id_categorie":15,"Titre":"Science et technologie","Description":"pulvinar nulla pede ullamcorper augue a suscipit nulla"}
+]
