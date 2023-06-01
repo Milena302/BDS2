@@ -54,18 +54,38 @@ public class Emprunt {
 
     public void insertOneEmprunt(String nomCollection, Document emprunt){
         //Drop a collection
-        MongoCollection<Document> colDepts=database.getCollection(nomCollection);
-        colDepts.insertOne(emprunt);
+        MongoCollection<Document> colEmprunt=database.getCollection(nomCollection);
+        colEmprunt.insertOne(emprunt);
         System.out.println("Document inserted successfully");
     }
 
-    public void insertManyDepts(String nomCollection, List<Document> emps){
+    public void insertManyEmprunt(String nomCollection, List<Document> emprunts){
         //Drop a collection
-        MongoCollection<Document> colEmps=database.getCollection(nomCollection);
-        colEmps.insertMany(emps);
+        MongoCollection<Document> colEmprunt=database.getCollection(nomCollection);
+        colEmprunt.insertMany(emprunts);
         System.out.println("Many Documents inserted successfully");
     }
 
+    public void updateOneEmprunt(String nomCollection, Document emprunt){
+        //Drop a collection
+        MongoCollection<Document> colEmprunt=database.getCollection(nomCollection);
+        colEmprunt.insertOne(emprunt);
+        System.out.println("Document inserted successfully");
+    }
+
+    public void updateManyEmprunt(String nomCollection, List<Document> emprunts){
+        //Drop a collection
+        MongoCollection<Document> colEmprunt=database.getCollection(nomCollection);
+        colEmprunt.insertMany(emprunts);
+        System.out.println("Many Documents inserted successfully");
+    }
+
+    public void deleteOneEmprunt(String nomCollection, Document emprunt){
+        //Drop a collection
+        MongoCollection<Document> colEmprunt=database.getCollection(nomCollection);
+        colEmprunt.deleteOne(emprunt);
+        System.out.println("Document inserted successfully");
+    }
 
     public static void main(String[] args) {
         Emprunt emprunt = new Emprunt();
