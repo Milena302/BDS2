@@ -23,6 +23,23 @@ import java.util.ArrayList;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.client.model.UpdateOptions;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import org.bson.Document;
+import com.mongodb.client.FindIterable;
+import java.util.Iterator;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import com.mongodb.client.result.UpdateResult;
+import com.mongodb.client.model.UpdateOptions;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
 public class Adherent{
     private MongoDatabase database;	//instance d'une base, pointeur
     private String dbName="Library";		//nom de la base
@@ -129,9 +146,73 @@ public class Adherent{
         }		
        }
 
+
+       public void insertJsonData(String collectionName, String jsonFileName) {
+        String jsonFilePath = Paths.get(System.getenv("MYPATH"),  "data", jsonFileName).toString();
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+            List<Document> adhDocuments = new ArrayList<>();
+
+            // Assuming the content string represents a JSON array, like: [{"key": "value"},
+            // ...]
+            content = content.trim();
+            if (content.startsWith("[") && content.endsWith("]")) {
+                content = content.substring(1, content.length() - 1); // Remove the [ and ]
+                String[] jsonObjects = content.split("},\\s*\\{");
+
+                for (String jsonObject : jsonObjects) {
+                    jsonObject = jsonObject.trim();
+                    if (!jsonObject.startsWith("{"))
+                        jsonObject = "{" + jsonObject;
+                    if (!jsonObject.endsWith("}"))
+                        jsonObject = jsonObject + "}";
+
+                    Document adhDoc = Document.parse(jsonObject);
+                    adhDocuments.add(adhDoc);
+                }
+            }
+
+            insertManyAdhs(collectionName, adhDocuments);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<Document> findAdhs(String collectionName, Document filter) {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        FindIterable<Document> result;
+        if (filter != null) {
+            result = collection.find(filter);
+        } else {
+            result = collection.find();
+        }
+        List<Document> adhs = new ArrayList<>();
+        for (Document adh : result) {
+            adhs.add(adh);
+        }
+        return adhs;
+    }
+    
+
+    public void printAllAdhs(String collectionName) {
+        List<Document> adhs = findAdhs(collectionName, null);
+        for (Document adh : adhs) {
+            System.out.println(adh.toJson());
+        }
+    } 
+
     public static void main(String[] args) {
+        System.out.println("DEBUT DE ADHERENT");
+        System.out.println("///////////////////////////////////////");
         Adherent adh = new Adherent();
+        System.out.println("///////////////////////////////////////");
         adh.dropCollectionAdh(adh.AdhCollectionName);
+        System.out.println("///////////////////////////////////////");
         adh.createCollectionAdh(adh.AdhCollectionName);
+        System.out.println("///////////////////////////////////////");
+        adh.insertJsonData(adh.AdhCollectionName, "adherent.json");
+        System.out.println("///////////////////////////////////////");
+        adh.printAllAdhs(adh.AdhCollectionName);
     }
 }
