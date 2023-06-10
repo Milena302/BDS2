@@ -106,7 +106,7 @@ public class Categorie {
 
 
 	public static void main(String[] args) {
-		Editeur editeur = new Editeur();
-		editeur.readCollection("Categorie", new Document());
+		Categorie categorie = new Categorie();
+		categorie.readCollection("Categorie", new Document());
 	}
 }
