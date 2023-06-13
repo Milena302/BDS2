@@ -39,7 +39,7 @@ public class Editeur {
     	private String passWord="passUlib";
     	private String collectionName="colEditeur";
 
-	private String id_Editeur;
+	private String _id;		//id_Editeur
 	private String nom;
 	
 
@@ -52,6 +52,14 @@ public class Editeur {
 		database = mongoClient.getDatabase(dbName); 
 	}
 
+	
+	public String get_id(){
+		return _id;
+	}
+
+	public String getNom(){
+		return nom;
+	}
 
 	public void createCollection(String nomCollection){
     		database.createCollection(nomCollection); 

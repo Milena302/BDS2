@@ -39,7 +39,7 @@ public class Categorie {
     	private String passWord="passUlib";
     	private String collectionName="colCategorie";
 
-	private String id_Categorie;
+	private String _id;		//id_Categorie
 	private String nom;
 	
 
@@ -52,6 +52,14 @@ public class Categorie {
 		database = mongoClient.getDatabase(dbName); 
 	}
 
+	
+	public String get_id(){
+		return _id;
+	}
+
+	public String getNom(){
+		return nom;
+	}
 
 	public void createCollection(String nomCollection){
     		database.createCollection(nomCollection); 
@@ -108,5 +116,7 @@ public class Categorie {
 	public static void main(String[] args) {
 		Categorie categorie = new Categorie();
 		categorie.readCollection("Categorie", new Document());
+		categorie.readCollection(categorie.collectionName, new Document()); 
+
 	}
 }
