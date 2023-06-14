@@ -4,29 +4,28 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
-import com.mongodb.DBObject;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DB;
 import org.bson.Document;
-import java.util.Arrays;
-import java.util.List;
 import com.mongodb.client.FindIterable;
-import java.util.Iterator;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import com.mongodb.client.result.UpdateResult;
-import com.mongodb.client.model.UpdateOptions;
+import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.Arrays;
 
 public class Livre {
-    private MongoDatabase database; // Database instance, pointer
-    private String dbName = "Library"; // Database name
+    private MongoDatabase database;
+    private String dbName = "Library";
     private String hostName = "localhost";
     private int port = 27017;
     private String userName = "ulib";
     private String passWord = "passUlib";
-    private String LivreCollectionName = "colLivres";
+    private String livreCollectionName = "colLivres";
+    private String categorieCollectionName = "colCategories";
+
+    public String getLivreCollectionName() {
+        return this.livreCollectionName;
+    }
 
     Livre() {
         MongoClient mongoClient = new MongoClient(hostName, port);
@@ -43,29 +42,17 @@ public class Livre {
     }
 
     public void dropCollectionLivres(String collectionName) {
-        // Drop a collection
-        MongoCollection<Document> colLivres = null;
-        System.out.println("\n\n\n*********** in dropCollectionLivres *****************");
-        colLivres = database.getCollection(collectionName);
-        System.out.println("!!!! Collection Livres : " + colLivres);
-        // If collection does not exist, it does not need to be dropped
-        if (colLivres != null) {
-            colLivres.drop();
-            System.out.println("Collection colLivres removed successfully !!!");
-        }
+        database.getCollection(collectionName).drop();
+        System.out.println("Collection " + collectionName + " removed successfully");
     }
 
-    public void insertOneLivre(String collectionName, Document Livre) {
-        // Drop a collection
-        MongoCollection<Document> colLivres = database.getCollection(collectionName);
-        colLivres.insertOne(Livre);
+    public void insertOneLivre(String collectionName, Document livre) {
+        database.getCollection(collectionName).insertOne(livre);
         System.out.println("Document inserted successfully");
     }
 
-    public void insertManyLivres(String collectionName, List<Document> Livres) {
-        // Drop a collection
-        MongoCollection<Document> colLivres = database.getCollection(collectionName);
-        colLivres.insertMany(Livres);
+    public void insertManyLivres(String collectionName, List<Document> livres) {
+        database.getCollection(collectionName).insertMany(livres);
         System.out.println("Many Documents inserted successfully");
     }
 
@@ -80,56 +67,158 @@ public class Livre {
         return results;
     }
 
-    public void updateLivre(String collectionName, Document filter, Document update) {
-        MongoCollection<Document> colLivres = database.getCollection(collectionName);
-        UpdateResult result = colLivres.updateOne(filter, new Document("$set", update));
-        System.out.println("Number of documents updated : " + result.getModifiedCount());
+    public List<Document> joinLivresWithCategories(String categorieCollectionName) {
+        MongoCollection<Document> colLivres = database.getCollection(livreCollectionName);
+
+        List<Document> pipeline = Arrays.asList(
+                new Document("$lookup",
+                        new Document("from", categorieCollectionName)
+                                .append("localField", "Categorie")
+                                .append("foreignField", "_id")
+                                .append("as", "categorie_info")));
+
+        List<Document> results = new ArrayList<>();
+        for (Document document : colLivres.aggregate(pipeline)) {
+            results.add(document);
+        }
+        return results;
     }
 
-    public void deleteLivre(String collectionName, Document filter) {
-        MongoCollection<Document> colLivres = database.getCollection(collectionName);
-        colLivres.deleteOne(filter);
-        System.out.println("Document deleted successfully");
+    public List<Document> findLivresByCategorie(String categorieCollectionName, int categorieId) {
+        Document filter = new Document("Categorie", categorieId);
+        List<Document> joinedData = joinLivresWithCategories(categorieCollectionName);
+
+        List<Document> filteredLivres = new ArrayList<>();
+
+        for (Document document : joinedData) {
+            List<Document> categorieInfoList = document.getList("categorie_info", Document.class);
+            for (Document categorieInfo : categorieInfoList) {
+                if (categorieInfo.getInteger("_id") == categorieId) {
+                    Document newDocument = new Document();
+                    newDocument.put("_id", document.getInteger("_id"));
+                    newDocument.put("Titre", document.getString("Titre"));
+                    newDocument.put("Auteur", document.getInteger("Auteur"));
+                    filteredLivres.add(newDocument);
+                    break;
+                }
+            }
+        }
+
+        return filteredLivres;
+    }
+
+    public void insertJsonData(String collectionName, String jsonFileName) {
+        String jsonFilePath = Paths.get(System.getenv("MYPATH"), "data", jsonFileName).toString();
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+            List<Document> livreDocuments = new ArrayList<>();
+
+            // Assuming the content string represents a JSON array, like: [{"key": "value"},
+            // ...]
+            content = content.trim();
+            if (content.startsWith("[") && content.endsWith("]")) {
+                content = content.substring(1, content.length() - 1); // Remove the [ and ]
+                String[] jsonObjects = content.split("},\\s*\\{");
+
+                for (String jsonObject : jsonObjects) {
+                    jsonObject = jsonObject.trim();
+                    if (!jsonObject.startsWith("{"))
+                        jsonObject = "{" + jsonObject;
+                    if (!jsonObject.endsWith("}"))
+                        jsonObject = jsonObject + "}";
+
+                    Document livreDoc = Document.parse(jsonObject);
+                    livreDocuments.add(livreDoc);
+                }
+            }
+
+            insertManyLivres(collectionName, livreDocuments);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int countLivresByCategorie(String categorieCollectionName, int categorieId) {
+        Document filter = new Document("Categorie", categorieId);
+        List<Document> joinedData = joinLivresWithCategories(categorieCollectionName);
+
+        int count = 0;
+
+        for (Document document : joinedData) {
+            List<Document> categorieInfoList = document.getList("categorie_info", Document.class);
+            for (Document categorieInfo : categorieInfoList) {
+                if (categorieInfo.getInteger("_id") == categorieId) {
+                    count++;
+                    break;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    public List<Document> joinEditeursWithLivres(String editCol) {
+
+        MongoCollection<Document> colLivres = database.getCollection(livreCollectionName);
+
+        List<Document> pipeline = Arrays.asList(
+                new Document("$lookup",
+                        new Document("from", editCol)
+                                .append("localField", "Editeur")
+                                .append("foreignField", "_id")
+                                .append("as", "editeur")));
+
+        List<Document> results = new ArrayList<>();
+        for (Document document : colLivres.aggregate(pipeline)) {
+            results.add(document);
+        }
+        return results;
+    }
+
+    public void createIndexOnId() {
+        MongoCollection<Document> colLivres = database.getCollection(livreCollectionName);
+        colLivres.createIndex(new Document("_id", 1));
+    }
+
+    public void createIndexOnCategorie() {
+        MongoCollection<Document> colLivres = database.getCollection(livreCollectionName);
+        colLivres.createIndex(new Document("Categorie", 1));
     }
 
     public static void main(String[] args) {
-        // Create instance of Livre class
         Livre livre = new Livre();
+        Editeur editeur = new Editeur();
 
-        // Drop collection if exists
-        livre.dropCollectionLivres(livre.LivreCollectionName);
+        Categorie categorie = new Categorie();
 
-        // Create new collection
-        livre.createCollectionLivres(livre.LivreCollectionName);
+        livre.dropCollectionLivres(livre.livreCollectionName);
+        livre.createCollectionLivres(livre.livreCollectionName);
 
-        // Create a new document
-        Document doc = new Document("title", "The Great Gatsby")
-                .append("author", "F. Scott Fitzgerald")
-                .append("year", 1925);
+        livre.createIndexOnId();
+        livre.createIndexOnCategorie();
 
-        // Insert the document into the collection
-        livre.insertOneLivre(livre.LivreCollectionName, doc);
+        livre.insertJsonData(livre.livreCollectionName, "livre_data.json");
 
-        // Update the document
-        Document update = new Document("year", 1926);
-        Document filter = new Document("title", "The Great Gatsby");
-        livre.updateLivre(livre.LivreCollectionName, filter, update);
+        System.out.println("***************************************");
+        System.out.println("Filtering by categories");
+        System.out.println("***************************************");
 
-        // Read the updated document
-        List<Document> results = livre.findLivres(livre.LivreCollectionName, filter);
-        for (Document document : results) {
-            System.out.println(document.toJson());
+        int categorieId = 1; // specify the category ID you are interested in here
+
+        List<Document> livresByCategorie = livre.findLivresByCategorie(categorie.getCategorieCollectionName(),
+                categorieId);
+        System.out.println("\n Livres from Categorie ID " + categorieId + ":\n");
+        for (Document livreDoc : livresByCategorie) {
+            System.out.println(livreDoc.toJson());
         }
 
-        // Delete the document
-        livre.deleteLivre(livre.LivreCollectionName, filter);
+        int count = livre.countLivresByCategorie(categorie.getCategorieCollectionName(), categorieId);
+        System.out.println("\n Number of Livres from Categorie ID " + categorieId + ": " + count + "\n");
 
-        // Try to find the deleted document
-        results = livre.findLivres(livre.LivreCollectionName, filter);
-        if (results.isEmpty()) {
-            System.out.println("Document deleted successfully.");
-        } else {
-            System.out.println("Document was not deleted.");
+        List<Document> result = livre.joinEditeursWithLivres(editeur.getEditName());
+        for (Document document : result) {
+            // System.out.println(document.toJson());
         }
     }
 
