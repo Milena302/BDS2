@@ -35,6 +35,9 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
 
 
 public class Emprunt {
@@ -191,6 +194,61 @@ public class Emprunt {
         return results;
     }
 
+
+    public List<Document> joinEmpruntWithEmploye(String adherentCollectionName) {
+        MongoCollection<Document> colEmp = database.getCollection(EmpruntCollectionName); // fixed variable name
+
+        List<Document> pipeline = Arrays.asList(
+                new Document("$lookup",
+                        new Document("from", adherentCollectionName)
+                                .append("localField", "id_employe")
+                                .append("foreignField", "_id")
+                                .append("as", "employe_info")));
+
+        List<Document> results = new ArrayList<>();
+        for (Document document : colEmp.aggregate(pipeline)) {
+            results.add(document);
+        }
+        return results;
+    }
+
+    public void printEmpruntsByAdherentId(String collectionName, int adherentId) {
+        Document filter = new Document("id_adherent", adherentId);
+        List<Document> emprunts = findEmprunts(collectionName, filter);
+        System.out.println("Emprunts effectues par Adherent dont l'id est " + adherentId);
+        for (Document emprunt : emprunts) {
+            System.out.println(emprunt.toJson());
+        }
+    }
+
+
+    public int getAdherentWithMostEmprunts(String collectionName) {
+        List<Document> emprunts = findEmprunts(collectionName, null);
+    
+        // Compter le nombre d'emprunts par adhérent
+        Map<Integer, Integer> empruntsByAdherent = new HashMap<>();
+        for (Document emprunt : emprunts) {
+            int adherentId = emprunt.getInteger("id_adherent");
+            empruntsByAdherent.put(adherentId, empruntsByAdherent.getOrDefault(adherentId, 0) + 1);
+        }
+    
+        // Trouver l'adhérent avec le nombre maximum d'emprunts
+        int maxEmprunts = 0;
+        int adherentIdWithMostEmprunts = -1;
+        for (Map.Entry<Integer, Integer> entry : empruntsByAdherent.entrySet()) {
+            int adherentId = entry.getKey();
+            int numEmprunts = entry.getValue();
+            if (numEmprunts > maxEmprunts) {
+                maxEmprunts = numEmprunts;
+                adherentIdWithMostEmprunts = adherentId;
+            }
+        }
+    
+        return adherentIdWithMostEmprunts;
+    }
+    
+    
+
     public static void main(String[] args) {
         System.out.println("DEBUT DE EMPRUNT");
         System.out.println("///////////////////////////////////////");
@@ -204,9 +262,21 @@ public class Emprunt {
         System.out.println("///////////////////////////////////////");
         emprunt.printAllEmprunts(emprunt.EmpruntCollectionName);
 
-        List<Document> joinedData = emprunt.joinEmpruntWithAdherent(emprunt.EmpruntCollectionName);
-        for (Document document : joinedData) {
+        List<Document> joinedDataAdh = emprunt.joinEmpruntWithAdherent(emprunt.EmpruntCollectionName);
+        for (Document document : joinedDataAdh) {
             System.out.println(document.toJson());
         }
+
+        List<Document> joinedDataEmp = emprunt.joinEmpruntWithEmploye(emprunt.EmpruntCollectionName);
+        for (Document document : joinedDataEmp) {
+            System.out.println(document.toJson());
+        }
+
+        
+        emprunt.printEmpruntsByAdherentId(emprunt.EmpruntCollectionName, 42);
+
+        int adherentIdWithMostEmprunts = emprunt.getAdherentWithMostEmprunts(emprunt.EmpruntCollectionName);
+        System.out.println("ID de l'adhérent avec le plus d'emprunts : " + adherentIdWithMostEmprunts);
+
     }
 }

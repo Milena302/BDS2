@@ -40,6 +40,17 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import com.mongodb.client.model.Sorts;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import org.bson.Document;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 public class Adherent{
     private MongoDatabase database;	//instance d'une base, pointeur
     private String dbName="Library";		//nom de la base
@@ -147,37 +158,46 @@ public class Adherent{
        }
 
 
+       
        public void insertJsonData(String collectionName, String jsonFileName) {
-        String jsonFilePath = Paths.get(System.getenv("MYPATH"),  "data", jsonFileName).toString();
-        try {
-            String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
-            List<Document> adhDocuments = new ArrayList<>();
-
-            // Assuming the content string represents a JSON array, like: [{"key": "value"},
-            // ...]
-            content = content.trim();
-            if (content.startsWith("[") && content.endsWith("]")) {
-                content = content.substring(1, content.length() - 1); // Remove the [ and ]
-                String[] jsonObjects = content.split("},\\s*\\{");
-
-                for (String jsonObject : jsonObjects) {
-                    jsonObject = jsonObject.trim();
-                    if (!jsonObject.startsWith("{"))
-                        jsonObject = "{" + jsonObject;
-                    if (!jsonObject.endsWith("}"))
-                        jsonObject = jsonObject + "}";
-
-                    Document adhDoc = Document.parse(jsonObject);
-                    adhDocuments.add(adhDoc);
-                }
-            }
-
-            insertManyAdhs(collectionName, adhDocuments);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+           String jsonFilePath = Paths.get(System.getenv("MYPATH"), "data", jsonFileName).toString();
+           try {
+               String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+               List<Document> adhDocuments = new ArrayList<>();
+       
+               // Assuming the content string represents a JSON array, like: [{"key": "value"}, ...]
+               content = content.trim();
+               if (content.startsWith("[") && content.endsWith("]")) {
+                   content = content.substring(1, content.length() - 1); // Remove the [ and ]
+                   String[] jsonObjects = content.split("},\\s*\\{");
+       
+                   for (String jsonObject : jsonObjects) {
+                       jsonObject = jsonObject.trim();
+                       if (!jsonObject.startsWith("{"))
+                           jsonObject = "{" + jsonObject;
+                       if (!jsonObject.endsWith("}"))
+                           jsonObject = jsonObject + "}";
+       
+                       Document adhDoc = Document.parse(jsonObject);
+       
+                       // Conversion de la date au format "MM/dd/yyyy" en objet LocalDate
+                       String dateStr = adhDoc.getString("date_inscription");
+                       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                       LocalDate date = LocalDate.parse(dateStr, formatter);
+                       adhDoc.put("date_inscription", Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+       
+                       adhDocuments.add(adhDoc);
+                   }
+               }
+       
+               insertManyAdhs(collectionName, adhDocuments);
+       
+           } catch (IOException e) {
+               e.printStackTrace();
+           }
+       }
+       
+    
 
     public List<Document> findAdhs(String collectionName, Document filter) {
         MongoCollection<Document> collection = database.getCollection(collectionName);
@@ -202,6 +222,23 @@ public class Adherent{
         }
     } 
 
+    public void getAdherent(String nomCollection, 
+Document whereQuery, 
+Document projectionFields,
+Document sortFields){
+    System.out.println("\n\n\n** dans getAdherent **");
+
+    MongoCollection<Document> colEmps=database.getCollection(nomCollection);
+
+    FindIterable<Document> listEmp = colEmps.find(whereQuery).sort(sortFields).projection(projectionFields);
+
+    // Getting the iterator 
+    Iterator it = listEmp.iterator();
+    while(it.hasNext()) {
+            System.out.println(it.next());
+    }
+}
+
     public static void main(String[] args) {
         System.out.println("DEBUT DE ADHERENT");
         System.out.println("///////////////////////////////////////");
@@ -214,5 +251,32 @@ public class Adherent{
         adh.insertJsonData(adh.AdhCollectionName, "adherent.json");
         System.out.println("///////////////////////////////////////");
         adh.printAllAdhs(adh.AdhCollectionName);
+
+        //Pour tester getAdherent
+        //On affiche tous les adherents
+        adh.getAdherent(adh.AdhCollectionName, 
+        new Document(), 
+        new Document(), 
+        new Document());
+        //On projete sur nom et sur prenom
+        adh.getAdherent(adh.AdhCollectionName, 
+        new Document(), 
+        new Document("nom", 1).append("prenom", 1), 
+        new Document());
+        //On affiche les informations sur l'adherent dont l'id est 450
+        adh.getAdherent(adh.AdhCollectionName, 
+        new Document("_id", 450), 
+        new Document(), 
+        new Document());
+        //On projete sur nom et prenom, on trie par ordre croissant les noms
+        adh.getAdherent(adh.AdhCollectionName, 
+        new Document(), 
+        new Document("nom", 1).append("prenom", 1), 
+        new Document("nom", 1));
+        //On projete sur nom, date d'inscription. On trie par ordre decroisssant les inscriptions
+        adh.getAdherent(adh.AdhCollectionName, 
+        new Document(), 
+        new Document("nom", 1).append("date_inscription", 1), 
+        new Document("date_inscription", -1));
     }
 }
