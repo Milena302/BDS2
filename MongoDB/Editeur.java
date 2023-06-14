@@ -27,6 +27,8 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.IndexOptions;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 
 
@@ -61,16 +63,24 @@ public class Editeur {
 		return nom;
 	}
 
+	public String getCollectionName(){
+		return collectionName;
+	}
+
 	public void createCollection(String nomCollection){
     		database.createCollection(nomCollection); 
     		System.out.println("Collection "+ nomCollection + " created successfully"); 
 	}
 
-	public void readCollection(String nomCollection, Document sortOptions){	
+	public void readCollection(String nomCollection, Document whereQuery, Document sortFields, Document projectionFields){	
 		MongoCollection<Document> collection = database.getCollection(nomCollection);
 		System.out.println("\n\n\n*********** " + nomCollection +" *****************");
- 		collection.find().sort(sortOptions);
+		FindIterable<Document> listDoc=collection.find(whereQuery).sort(sortFields).projection(projectionFields);
+		// Getting the iterator
+		Iterator it = listDoc.iterator();
+		while(it.hasNext()) { System.out.println(it.next()); }
 	}
+
 
 	public void updateCollection(String nomCollection, Document whereQuery, Document updateExpressions, UpdateOptions updateOptions){
 		MongoCollection<Document> collection = database.getCollection(nomCollection);
@@ -112,9 +122,44 @@ public class Editeur {
 		collection.deleteMany(filters);
 	}
 
+	
+	//Written by Hadil and Milena
+	public void insertJsonData(String collectionName, String jsonFileName) {
+    		String jsonFilePath = Paths.get(System.getenv("MYPATH"),  "data", jsonFileName).toString();
+    		try {
+        		String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+        		List<Document> documents = new ArrayList<>();
+
+        		// Assuming the content string represents a JSON array, like: [{"key": "value"},
+        		// ...]
+        		content = content.trim();
+        		if (content.startsWith("[") && content.endsWith("]")) {
+            		content = content.substring(1, content.length() - 1); // Remove the [ and ]
+            		String[] jsonObjects = content.split("},\\s*\\{");
+
+            		for (String jsonObject : jsonObjects) {
+                		jsonObject = jsonObject.trim();
+                		if (!jsonObject.startsWith("{"))
+                    		jsonObject = "{" + jsonObject;
+                		if (!jsonObject.endsWith("}"))
+                    		jsonObject = jsonObject + "}";
+
+               			Document doc = Document.parse(jsonObject);
+				documents.add(doc);
+            		}
+        	}
+
+        	insertManyDocuments(collectionName, documents);
+
+    	} catch (Exception e) {
+        	e.printStackTrace();
+	    }
+	}
+
 
 	public static void main(String[] args) {
 		Editeur editeur = new Editeur();
-		editeur.readCollection("colEditeur", new Document());
+		editeur.insertJsonData(editeur.collectionName,"editeur.json");
+		editeur.readCollection(editeur.collectionName, new Document(), new Document("_id",1), new Document()); 
 	}
 }
