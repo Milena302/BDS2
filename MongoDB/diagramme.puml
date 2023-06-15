@@ -1,0 +1,71 @@
+@startuml
+
+class Livre {
+  {field} - id_livre: int <<Primary>>
+  - titre: String
+  - description: String
+  - pays: String
+  - id_categorie: int <<Foreign>>
+  - id_auteur: int <<Foreign>>
+  - id_editeur: int <<Foreign>>
+}
+
+class Editeur {
+  {field} - id_editeur: int <<Primary>>
+  - prenom: String
+  - nom: String
+  - genre: String
+  - date_de_naissance: Date
+}
+
+class Adherent {
+  {field} - id_adherent: int <<Primary>>
+  - prenom: String
+  - nom: String
+  - genre: String
+  - date_inscription: Date
+  - email: String
+  - telephone: String
+  - adresse: String
+}
+
+class Auteur {
+  {field} - id_auteur: int <<Primary>>
+  - prenom: String
+  - nom: String
+  - genre: String
+  - date_de_naissance: Date
+}
+
+class Categorie {
+  {field} - id_categorie: int <<Primary>>
+  - titre: String
+  - description: String
+}
+
+class Employe {
+  {field} - id_employe: int <<Primary>>
+  - prenom: String
+  - nom: String
+  - genre: String
+  - age: Date
+}
+
+class Emprunt {
+  {field} - id_emprunt: int <<Primary>>
+  - date_emprunt: Date
+  - date_limite_retour: Date
+  - date_retour: Date
+  - id_adherent: int <<Foreign>>
+  - id_employe: int <<Foreign>>
+  - id_livre: int <<Foreign>>
+}
+
+Livre "1" -- "0..1" Editeur 
+Livre "1" -- "0..1" Auteur 
+Livre "1" -- "0..1" Categorie 
+Emprunt "0..1" -- "1" Adherent 
+Emprunt "0..1" -- "1" Employe
+Emprunt "0..1" -- "1" Livre 
+
+@enduml
