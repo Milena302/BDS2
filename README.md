@@ -3,6 +3,7 @@
 ## Cette branche contient toutes les versions finales de nos fichiers.
 
 Vous trouverez le travail pour chaque moteur dans son dossier respectif, accompagné de son rapport et de tout fichier approprié.
+Vous trouverez également dans le répertoire principal le fichier détaillant la conception de notre projet intitulé "2specification_analyse_conception_AYARI_KHAMMAR_KOSTOV_PRIGODIN" ainsi que le fichier contenant les contributions au projet par membre, nommé "Contributions_projet_NOSQL_AYARI_KHAMMAR_KOSTOV_PRIGODIN".
 
 Veuillez placer les répertoires BDS2 et apache-cassandra-3.11.15 sous le répertoire "C:\" pour une exécution correcte.
 La structure devrait ressembler à ceci : "C:\BDS2" et "C:\apache-cassandra-3.11.15".
