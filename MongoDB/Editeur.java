@@ -123,7 +123,27 @@ public class Editeur {
 	}
 
 	
-	//Written by Hadil and Milena
+	public void joinLocalAndforeignCollections(
+		String localCollectionName,
+		String foreignCollectionName,
+		String localColJoinFieldName,
+		String foreigColJoinFieldName,
+		Document fielterFieldsOnLocalCollection,
+		String namedJoinedElements
+		){
+			AggregateIterable<Document> outPutColl;
+			MongoCollection<Document> joinColl=
+			database.getCollection(localCollectionName);
+			System.out.println("\n\n\n*********** dans "+ namedJoinedElements +" *****************");
+			outPutColl= joinColl.aggregate(Arrays.asList(
+			Aggregates.match(fielterFieldsOnLocalCollection),
+			Aggregates.lookup(foreignCollectionName, localColJoinFieldName, foreigColJoinFieldName, namedJoinedElements)));
+			for (Document colDoc : outPutColl){
+			System.out.println(colDoc);
+		}
+	}
+
+	//Réutilisation de la fonction écrit par Hadil and Milena
 	public void insertJsonData(String collectionName, String jsonFileName) {
     		String jsonFilePath = Paths.get(System.getenv("MYPATH"),  "data", jsonFileName).toString();
     		try {
@@ -159,7 +179,11 @@ public class Editeur {
 
 	public static void main(String[] args) {
 		Editeur editeur = new Editeur();
-		editeur.insertJsonData(editeur.collectionName,"editeur.json");
+		editeur.insertJsonData(editeur.collectionName,"editeur_data.json");
 		editeur.readCollection(editeur.collectionName, new Document(), new Document("_id",1), new Document()); 
+
+		Livre livre = new Livre();
+		editeur.joinLocalAndforeignCollections(editeur.collectionName, "colLivres", "_id", "Editeur", new Document("_id", 15),
+							"Livres de l'editeur : Kimberly Melmore");	
 	}
 }

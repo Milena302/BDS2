@@ -120,7 +120,27 @@ public class Categorie {
 		collection.deleteMany(filters);
 	}
 
-	//Written by Hadil and Milena
+	public void joinLocalAndforeignCollections(
+		String localCollectionName,
+		String foreignCollectionName,
+		String localColJoinFieldName,
+		String foreigColJoinFieldName,
+		Document fielterFieldsOnLocalCollection,
+		String namedJoinedElements
+		){
+			AggregateIterable<Document> outPutColl;
+			MongoCollection<Document> joinColl=
+			database.getCollection(localCollectionName);
+			System.out.println("\n\n\n*********** dans "+ namedJoinedElements +" *****************");
+			outPutColl= joinColl.aggregate(Arrays.asList(
+			Aggregates.match(fielterFieldsOnLocalCollection),
+			Aggregates.lookup(foreignCollectionName, localColJoinFieldName, foreigColJoinFieldName, namedJoinedElements)));
+			for (Document colDoc : outPutColl){
+			System.out.println(colDoc);
+			}
+		}
+
+	//Réutilisation de la fonction écrit par Hadil and Milena
 	public void insertJsonData(String collectionName, String jsonFileName) {
     		String jsonFilePath = Paths.get(System.getenv("MYPATH"),  "data", jsonFileName).toString();
     		try {
@@ -157,7 +177,11 @@ public class Categorie {
 
 	public static void main(String[] args) {
 		Categorie categorie = new Categorie();
-		categorie.insertJsonData(categorie.collectionName,"categorie.json");
-		categorie.readCollection(categorie.collectionName, new Document(), new Document("_id",1), new Document()); 	
+		categorie.insertJsonData(categorie.collectionName,"categorie_data.json");
+		categorie.readCollection(categorie.collectionName, new Document(), new Document("_id",1), new Document());
+	
+		Livre livre = new Livre();
+		categorie.joinLocalAndforeignCollections(categorie.collectionName, "colLivres", "_id", "Categorie", new Document("_id", 5),
+							"Livres de la categorie : Mystere/Thriller");
 	}
 }
