@@ -1,3 +1,9 @@
+//Fichier écrit par Hadil
+
+// Set MYPATH=C:\BDS2
+// javac -g -cp %MYPATH%\mongojar\mongo-java-driver-3.12.10.jar;%MYPATH% %MYPATH%\MongoDB\Livre.java
+// java -Xmx256m -Xms256m -cp %MYPATH%\mongojar\mongo-java-driver-3.12.10.jar;%MYPATH% MongoDB.Livre
+
 package MongoDB;
 
 import com.mongodb.client.MongoCollection;
@@ -188,38 +194,8 @@ public class Livre {
 
     public static void main(String[] args) {
         Livre livre = new Livre();
-        Editeur editeur = new Editeur();
-
-        Categorie categorie = new Categorie();
-
-        livre.dropCollectionLivres(livre.livreCollectionName);
-        livre.createCollectionLivres(livre.livreCollectionName);
-
-        livre.createIndexOnId();
-        livre.createIndexOnCategorie();
-
+	livre.createCollectionLivres(livre.livreCollectionName);
         livre.insertJsonData(livre.livreCollectionName, "livre_data.json");
-
-        System.out.println("***************************************");
-        System.out.println("Filtering by categories");
-        System.out.println("***************************************");
-
-        int categorieId = 1; // specify the category ID you are interested in here
-
-        List<Document> livresByCategorie = livre.findLivresByCategorie(categorie.getCategorieCollectionName(),
-                categorieId);
-        System.out.println("\n Livres from Categorie ID " + categorieId + ":\n");
-        for (Document livreDoc : livresByCategorie) {
-            System.out.println(livreDoc.toJson());
-        }
-
-        int count = livre.countLivresByCategorie(categorie.getCategorieCollectionName(), categorieId);
-        System.out.println("\n Number of Livres from Categorie ID " + categorieId + ": " + count + "\n");
-
-        List<Document> result = livre.joinEditeursWithLivres(editeur.getEditName());
-        for (Document document : result) {
-            // System.out.println(document.toJson());
-        }
     }
 
 }
